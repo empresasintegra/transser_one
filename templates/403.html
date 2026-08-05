@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Sin permisos · Transser One{% endblock %}
+{% block page_title %}Sin permisos{% endblock %}
+{% block content %}
+<div class="alert error">
+  <strong>No tienes permisos para realizar esta acción.</strong>
+  {% if exception %}<p style="margin:6px 0 0">{{ exception }}</p>{% endif %}
+</div>
+<a href="{% url 'operaciones:dashboard' %}" class="button secondary">Volver al inicio</a>
+{% endblock %}

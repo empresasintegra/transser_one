@@ -1,0 +1,13 @@
+<div id="tarifa-preview" class="tax-box" style="margin: 15px 0">
+{% if tarifa %}
+  <div><span>Mandante</span>{{ tarifa.mandante|default:"—" }}</div>
+  <div><span>Código local</span>{{ tarifa.codigo_local|default:"—" }}</div>
+  <div><span>Origen</span>{{ tarifa.origen }}</div>
+  <div><span>Destino</span>{{ tarifa.destino }}</div>
+  <div><span>Neto</span><strong>${{ tarifa.tarifa_neta }}</strong></div>
+  <div><span>IVA {{ tarifa.tasa_iva }}%</span><strong>${{ tarifa.iva }}</strong></div>
+  <div><span>Total factura</span><strong>${{ tarifa.total }}</strong></div>
+{% else %}
+  <p class="muted" style="grid-column: 1/-1; margin:0">Selecciona una tarifa para ver el detalle.</p>
+{% endif %}
+</div>

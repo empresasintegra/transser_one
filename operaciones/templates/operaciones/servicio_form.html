@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Nuevo servicio · Transser One{% endblock %}
+{% block page_title %}Registro de servicio{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-body">
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-grid">
+        <label class="field">Proveedor / Cliente *
+          <select name="proveedor_select" required
+                  hx-get="{% url 'catalogos:opciones_tarifas' %}"
+                  hx-target="#tarifa_id" hx-trigger="change" hx-include="this">
+            <option value="">Seleccionar...</option>
+            {% for p in proveedores %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+          </select>
+        </label>
+
+        <label class="field">Ruta y tipo de servicio *
+          <select name="tarifa_id" id="tarifa_id" required
+                  hx-get="{% url 'catalogos:previsualizar_tarifa' %}"
+                  hx-target="#tarifa-preview" hx-swap="outerHTML" hx-trigger="change">
+            <option value="">Selecciona primero un proveedor</option>
+          </select>
+        </label>
+
+        <label class="field">Conductor
+          <select name="conductor_principal"
+                  hx-get="{% url 'catalogos:tracto_de_conductor' %}"
+                  hx-target="#tracto-preview" hx-swap="outerHTML" hx-trigger="change" hx-include="this">
+            <option value="">Sin asignar</option>
+            {% for c in conductores %}<option value="{{ c.nombre }}">{{ c.nombre }}</option>{% endfor %}
+          </select>
+        </label>
+      </div>
+
+      <div class="tax-box" id="tarifa-preview" style="margin: 15px 0">
+        <p class="muted" style="grid-column: 1/-1; margin:0">Selecciona una tarifa para ver el detalle.</p>
+      </div>
+
+      <div class="form-grid">
+        <label class="field">Fecha de carga *<input type="date" name="fecha_carga" required></label>
+        <label class="field">Entrega estimada<input type="date" name="fecha_entrega_estimada"></label>
+        <label class="field">Tracto<input type="text" id="tracto-preview" name="tracto" readonly placeholder="Automático según conductor"></label>
+        <label class="field">Rampla<input type="text" name="rampla" placeholder="Ejemplo: HGKB23"></label>
+        <label class="field">Tipo de carga<input type="text" name="tipo_carga" placeholder="Seca, refrigerada..."></label>
+      </div>
+
+      <label class="field full-width">Observaciones<textarea name="observaciones" rows="3"></textarea></label>
+
+      <div class="form-actions">
+        <a href="{% url 'operaciones:centro_operaciones' %}" class="button secondary">Cancelar</a>
+        <button type="submit" class="button primary">Crear servicio</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

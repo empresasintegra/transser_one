@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Iniciar sesión · Transser One{% endblock %}
+{% block content_anon %}
+<main class="login-page">
+  <section class="login-card">
+    <div class="login-brand">
+      <div class="login-mark">T1</div>
+      <div>
+        <strong>Transser One</strong>
+        <span>ERP Transporte</span>
+      </div>
+    </div>
+
+    <div class="login-heading">
+      <span>ACCESO SEGURO</span>
+      <h1>Iniciar sesión</h1>
+      <p>Ingresa con tu cuenta corporativa para acceder al ERP.</p>
+    </div>
+
+    <form method="post" class="login-form">
+      {% csrf_token %}
+      <label>Correo electrónico
+        <div class="login-input">
+          <input type="email" name="email" required autofocus autocomplete="username">
+        </div>
+      </label>
+      <label>Contraseña
+        <div class="login-input">
+          <input type="password" name="password" required autocomplete="current-password" placeholder="Contraseña temporal">
+        </div>
+      </label>
+      {% if error %}<div class="login-error">{{ error }}</div>{% endif %}
+      <button type="submit">Ingresar</button>
+    </form>
+
+    <p class="login-help">Acceso inicial: jorge@transser.cl · Contraseña temporal: Transser2026!</p>
+  </section>
+</main>
+{% endblock %}

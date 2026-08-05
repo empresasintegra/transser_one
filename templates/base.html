@@ -1,0 +1,67 @@
+{% load static %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Transser One{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/transser.css' %}">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+{% if user.is_authenticated %}
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">T1</div>
+      <div>
+        <strong>Transser One</strong>
+        <span>ERP Transporte</span>
+      </div>
+    </div>
+
+    <nav class="main-nav">
+      <a class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'operaciones:dashboard' %}">Dashboard</a>
+      <a class="nav-item {% if request.resolver_match.url_name == 'centro_operaciones' %}active{% endif %}" href="{% url 'operaciones:centro_operaciones' %}">Centro de Operaciones</a>
+      <a class="nav-item {% if request.resolver_match.url_name == 'crear_servicio' %}active{% endif %}" href="{% url 'operaciones:crear_servicio' %}">Nuevo Servicio</a>
+      <button class="nav-item disabled" disabled title="En construcción">Clientes</button>
+      <button class="nav-item disabled" disabled title="En construcción">Flota</button>
+      <button class="nav-item disabled" disabled title="En construcción">Conductores</button>
+      <button class="nav-item disabled" disabled title="En construcción">Finanzas</button>
+      <button class="nav-item disabled" disabled title="En construcción">Reportes</button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <strong>{{ user.nombre }}</strong>
+      <span>{% for g in user.groups.all %}{{ g.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+      <form method="post" action="{% url 'accounts:logout' %}">
+        {% csrf_token %}
+        <button class="nav-item" type="submit">Cerrar sesión</button>
+      </form>
+    </div>
+  </aside>
+
+  <div class="main-content">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Transser One</p>
+        <h1>{% block page_title %}{% endblock %}</h1>
+      </div>
+    </header>
+
+    {% for message in messages %}
+      <div class="alert {{ message.tags }}">{{ message }}</div>
+    {% endfor %}
+
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% else %}
+{% block content_anon %}{% endblock %}
+{% endif %}
+<script>
+document.body.addEventListener('htmx:configRequest', (event) => {
+  event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+});
+</script>
+</body>
+</html>

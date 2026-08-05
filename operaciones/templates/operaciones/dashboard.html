@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · Transser One{% endblock %}
+{% block page_title %}Resumen ejecutivo{% endblock %}
+{% block content %}
+<p class="subtitle" style="margin-bottom: 20px">Indicadores calculados con los servicios registrados en Transser One.</p>
+
+<div class="kpi-grid">
+  <div class="kpi-card"><span>Ventas netas de hoy</span><strong>${{ ventas_hoy }}</strong><small>Según fecha de carga</small></div>
+  <div class="kpi-card"><span>Ventas netas del mes</span><strong>${{ ventas_mes }}</strong><small>{{ servicios_mes_count }} servicios registrados</small></div>
+  <div class="kpi-card"><span>Facturación total del mes</span><strong>${{ facturacion_mes }}</strong><small>Neto más IVA</small></div>
+  <div class="kpi-card"><span>Servicios activos</span><strong>{{ activos_count }}</strong><small>{{ en_ruta }} actualmente en ruta</small></div>
+  <div class="kpi-card"><span>Finalizados este mes</span><strong>{{ finalizados_mes }}</strong></div>
+  <div class="kpi-card"><span>Clientes atendidos</span><strong>{{ clientes_mes }}</strong></div>
+  <div class="kpi-card"><span>Ticket promedio</span><strong>${{ ticket_promedio|floatformat:0 }}</strong></div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <div><h2>Distribución de servicios por estado</h2></div>
+  </div>
+  <div class="panel-body kpi-grid" style="margin-bottom: 0">
+    {% for estado, cantidad in distribucion.items %}
+    <div class="kpi-card"><span>{{ estado }}</span><strong>{{ cantidad }}</strong></div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-header">
+    <div><h2>Servicios recientes</h2><span>Últimos servicios según fecha de carga</span></div>
+    <a href="{% url 'operaciones:centro_operaciones' %}" class="button secondary">Abrir Centro de Operaciones</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Servicio</th><th>Cliente</th><th>Ruta</th><th>Fecha</th><th>Tarifa</th><th>Estado</th></tr></thead>
+      <tbody>
+      {% for s in recientes %}
+        <tr>
+          <td><a class="link-button" href="{% url 'operaciones:servicio_detalle' s.id %}">{{ s.numero }}</a></td>
+          <td>{{ s.cliente }}</td>
+          <td>{{ s.origen }} → {{ s.destino }}</td>
+          <td>{{ s.fecha_carga }}</td>
+          <td>${{ s.tarifa }}</td>
+          <td><span class="badge estado-{{ s.estado|slugify }}">{{ s.estado }}</span></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="6" class="empty">No hay servicios registrados.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

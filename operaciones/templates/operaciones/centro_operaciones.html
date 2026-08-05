@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Centro de Operaciones · Transser One{% endblock %}
+{% block page_title %}Control operacional{% endblock %}
+{% block content %}
+<div class="topbar" style="margin-bottom: 20px">
+  <p class="subtitle" style="margin: 0">Administra servicios, equipos, evidencias, gastos y estados.</p>
+  <div class="top-actions">
+    <a href="{% url 'operaciones:centro_operaciones' %}" class="button secondary">Actualizar</a>
+    <a href="{% url 'operaciones:crear_servicio' %}" class="button primary">+ Nuevo servicio</a>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  {% for valor, etiqueta, cantidad in resumen %}
+  <a class="kpi-card {% if filtro_estado == valor %}selected{% endif %}" style="text-decoration:none"
+     href="?estado={% if filtro_estado == valor %}{% else %}{{ valor }}{% endif %}{% if busqueda %}&q={{ busqueda }}{% endif %}">
+    <span>{{ etiqueta }}</span><strong>{{ cantidad }}</strong>
+  </a>
+  {% endfor %}
+</div>
+
+<section class="panel">
+  <div class="panel-header">
+    <div><h2>Servicios</h2><span>{{ servicios|length }} resultados</span></div>
+    <form method="get" class="filters">
+      <input type="text" name="q" value="{{ busqueda }}" placeholder="Buscar cliente, ruta, patente...">
+      <select name="estado">
+        <option value="">Todos</option>
+        {% for valor, etiqueta in estados %}
+        <option value="{{ valor }}" {% if filtro_estado == valor %}selected{% endif %}>{{ etiqueta }}</option>
+        {% endfor %}
+      </select>
+      <button class="button secondary" type="submit">Filtrar</button>
+    </form>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Servicio</th><th>Cliente / Ruta</th><th>Conductor</th><th>Equipo</th><th>Fecha carga</th><th>Tarifa</th><th>Estado</th><th>Acciones</th></tr>
+      </thead>
+      <tbody>
+      {% for s in servicios %}
+        <tr>
+          <td><a class="link-button" href="{% url 'operaciones:servicio_detalle' s.id %}">{{ s.numero }}</a></td>
+          <td><strong>{{ s.cliente }}</strong><small>{{ s.origen }} → {{ s.destino }}</small></td>
+          <td>{{ s.conductor_principal|default:"Sin asignar" }}</td>
+          <td><strong>{{ s.tracto|default:"—" }}</strong><small>Rampla: {{ s.rampla|default:"—" }}</small></td>
+          <td>{{ s.fecha_carga }}</td>
+          <td>${{ s.tarifa }}</td>
+          <td><span class="badge estado-{{ s.estado|slugify }}">{{ s.estado }}</span></td>
+          <td><a href="{% url 'operaciones:servicio_detalle' s.id %}" class="mini-button">Ver</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="8" class="empty">No hay servicios registrados.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

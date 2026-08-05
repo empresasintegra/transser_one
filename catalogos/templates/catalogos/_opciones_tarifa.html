@@ -1,0 +1,4 @@
+<option value="">Ingreso manual</option>
+{% for t in tarifas %}
+<option value="{{ t.id }}">{% if t.codigo_local %}Local {{ t.codigo_local }} · {% endif %}{{ t.destino }} · {{ t.tipo_servicio }} — ${{ t.tarifa_neta }}</option>
+{% endfor %}

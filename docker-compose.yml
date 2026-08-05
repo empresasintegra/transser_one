@@ -1,0 +1,36 @@
+services:
+  django_db:
+    image: postgres:16-alpine
+    container_name: transser_django_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_HOST_PORT:-5434}:5432"
+    volumes:
+      - transser_django_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  django_web:
+    build:
+      context: .
+    container_name: transser_django_web
+    restart: unless-stopped
+    ports:
+      - "${DJANGO_HOST_PORT:-8001}:8000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      django_db:
+        condition: service_healthy
+
+volumes:
+  transser_django_postgres_data:

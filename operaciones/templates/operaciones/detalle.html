@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}{{ servicio.numero }} · Transser One{% endblock %}
+{% block page_title %}{{ servicio.numero }}{% endblock %}
+{% block content %}
+
+<div class="detail-hero">
+  <div><span>Cliente</span><strong>{{ servicio.cliente }}</strong></div>
+  <span class="badge estado-{{ servicio.estado|slugify }}">{{ servicio.estado }}</span>
+</div>
+
+<div class="route-box">
+  <div><span>Origen</span><strong>{{ servicio.origen }}</strong></div>
+  <div class="route-arrow">→</div>
+  <div><span>Destino</span><strong>{{ servicio.destino }}</strong></div>
+</div>
+
+<div class="detail-grid">
+  <div><span>Conductor</span><strong>{{ servicio.conductor_principal|default:"Sin asignar" }}</strong></div>
+  <div><span>Segundo conductor</span><strong>{{ servicio.conductor_secundario|default:"—" }}</strong></div>
+  <div><span>Tracto</span><strong>{{ servicio.tracto|default:"—" }}</strong></div>
+  <div><span>Rampla</span><strong>{{ servicio.rampla|default:"—" }}</strong></div>
+  <div><span>Fecha de carga</span><strong>{{ servicio.fecha_carga }}</strong></div>
+  <div><span>Tarifa neta</span><strong>${{ servicio.tarifa }}</strong></div>
+  <div><span>IVA venta</span><strong>${{ servicio.iva }}</strong></div>
+  <div><span>Total factura</span><strong>${{ servicio.total_factura }}</strong></div>
+</div>
+
+<div class="drawer-actions">
+  {% if siguiente_estado %}
+  <form method="post" action="{% url 'operaciones:cambiar_estado' servicio.id %}" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+    {% csrf_token %}
+    <input type="hidden" name="nuevo_estado" value="{{ siguiente_estado }}">
+    {% if siguiente_estado == "En Ruta" or siguiente_estado == "Finalizado" %}
+    <input type="text" name="evidencia_foto" placeholder="Enlace/nombre evidencia foto" required style="width: 280px">
+    {% endif %}
+    <button class="button primary" type="submit">Avanzar a {{ siguiente_estado }}</button>
+  </form>
+  {% endif %}
+</div>
+
+{% if servicio.estado == "En Ruta" or servicio.estado == "Descargando" %}
+<section class="panel">
+  <div class="panel-header"><h2>Cambiar rampla</h2></div>
+  <div class="panel-body">
+    <form method="post" action="{% url 'operaciones:cambiar_rampla' servicio.id %}" class="form-grid">
+      {% csrf_token %}
+      <input name="rampla_nueva" placeholder="Patente nueva rampla" required>
+      <input name="conductor_secundario" placeholder="Segundo conductor" required>
+      <input name="motivo" placeholder="Motivo del reemplazo" required>
+      <button class="button secondary" type="submit">Aplicar</button>
+    </form>
+  </div>
+</section>
+{% endif %}
+
+<section class="drawer-section">
+  <div class="section-title-row">
+    <h3 style="margin:0">Gastos de ruta</h3>
+  </div>
+
+  {% if gastos %}
+  <div class="expense-list">
+    {% for g in gastos %}
+    <div class="expense-card">
+      <div>
+        <strong>{{ g.descripcion }}</strong>
+        <small>{{ g.fecha }} · {{ g.quien_pago }} · {{ g.medio_pago }}</small>
+        <small>{{ g.documento_tipo|default:"Sin documento" }}{% if g.documento_numero %} {{ g.documento_numero }}{% endif %}</small>
+      </div>
+      <div class="expense-values">
+        <strong>${{ g.monto_total }}</strong>
+        <small>Neto ${{ g.monto_neto }} · IVA ${{ g.iva }}</small>
+        <span class="expense-status status-{{ g.estado|slugify }}">{{ g.estado }}</span>
+        {% if g.estado == "Pendiente" %}
+        <div style="display:flex; gap:6px">
+          <form method="post" action="{% url 'gastos:cambiar_estado_gasto' g.id %}">
+            {% csrf_token %}<input type="hidden" name="estado" value="Aprobado">
+            <button class="mini-button success" type="submit">Aprobar</button>
+          </form>
+          <form method="post" action="{% url 'gastos:cambiar_estado_gasto' g.id %}">
+            {% csrf_token %}<input type="hidden" name="estado" value="Rechazado">
+            <button class="mini-button danger" type="submit">Rechazar</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">Aún no hay gastos asociados a este servicio.</p>
+  {% endif %}
+
+  <details style="margin-top: 14px">
+    <summary>Agregar gasto</summary>
+    <form method="post" action="{% url 'gastos:crear_gasto' servicio.id %}" class="expense-form">
+      {% csrf_token %}
+      <label class="field">Categoría
+        <select name="categoria_id" required>
+          <option value="">Seleccionar...</option>
+          {% for c in categorias %}<option value="{{ c.id }}">{{ c.grupo }} · {{ c.nombre }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field">Fecha<input type="date" name="fecha" required></label>
+      <label class="field full">Descripción<input name="descripcion" placeholder="Ej.: Peaje Ruta 5 Norte" required></label>
+      <label class="field">Monto neto<input type="number" name="monto_neto" min="1" step="1" required></label>
+      <label class="field">Quién pagó
+        <select name="quien_pago">
+          <option>Empresa</option><option>Conductor</option><option>Caja Chica</option><option>Tarjeta Empresa</option><option>Cliente</option>
+        </select>
+      </label>
+      <label class="field">Medio de pago
+        <select name="medio_pago">
+          <option>Transferencia</option><option>Efectivo</option><option>Tarjeta Crédito</option><option>Tarjeta Débito</option><option>TAG automático</option>
+        </select>
+      </label>
+      <label class="field">Proveedor<input name="proveedor"></label>
+      <label class="field">Tipo documento
+        <select name="documento_tipo">
+          <option value="">Sin documento</option><option>Factura</option><option>Boleta</option><option>Comprobante</option><option>Recibo</option>
+        </select>
+      </label>
+      <label class="field">N° documento<input name="documento_numero"></label>
+      <label class="field">Respaldo<input name="evidencia" placeholder="Nombre o enlace del archivo"></label>
+      <label class="field check-label"><input type="checkbox" name="afecto_iva" checked> Afecto a IVA</label>
+      <label class="field check-label"><input type="checkbox" name="requiere_rendicion"> Requiere rendición</label>
+      <label class="field check-label"><input type="checkbox" name="reembolsable"> Reembolsable</label>
+      <label class="field full">Observación<textarea name="observacion" rows="2"></textarea></label>
+      <div class="form-actions full">
+        <button type="submit" class="button primary">Guardar gasto</button>
+      </div>
+    </form>
+  </details>
+</section>
+
+<section class="drawer-section profitability">
+  <h3>Rentabilidad del servicio</h3>
+  <div class="profit-grid">
+    <div><span>Ingreso neto</span><strong>${{ servicio.tarifa }}</strong></div>
+    <div><span>Gastos netos</span><strong>${{ gastos_netos }}</strong></div>
+    <div><span>Utilidad estimada</span><strong>${{ utilidad }}</strong></div>
+    <div><span>Margen</span><strong>{{ margen|floatformat:1 }}%</strong></div>
+  </div>
+  {% if gastos_pendientes > 0 %}<p class="warning-text" style="margin-top:10px">Hay {{ gastos_pendientes }} gasto(s) pendiente(s) de revisión.</p>{% endif %}
+</section>
+
+<section class="drawer-section">
+  <h3>Comisiones</h3>
+  {% for c in servicio.comisiones.all %}
+    <div class="commission-row"><span>{{ c.conductor }}</span><strong>{{ c.porcentaje }}%</strong></div>
+  {% empty %}<p class="muted">Sin comisiones registradas.</p>{% endfor %}
+</section>
+
+<section class="drawer-section">
+  <h3>Historial operacional</h3>
+  <div class="timeline">
+    {% for e in servicio.eventos.all reversed %}
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div>
+        <strong>{% if e.estado_nuevo %}{{ e.estado_anterior|default:"Inicio" }} → {{ e.estado_nuevo }}{% else %}{{ e.tipo|cut:"_"|capfirst }}{% endif %}</strong>
+        <p>{{ e.motivo|default:"Sin observación" }}</p>
+        <small>{{ e.actor }} · {{ e.creado_en }}</small>
+        {% if e.evidencia_foto %}<span class="evidence">📷 Evidencia: {{ e.evidencia_foto }}</span>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
