@@ -1,0 +1,22 @@
+{% if pagina.paginator.num_pages > 1 %}
+<div class="pagination">
+  <span class="pagination-info">
+    {{ pagina.start_index }}–{{ pagina.end_index }} de {{ pagina.paginator.count }}
+  </span>
+  <div class="pagination-links">
+    {% if pagina.has_previous %}
+      <a class="mini-button" href="{% querystring page=1 %}" hx-get="{% querystring page=1 %}" hx-target="#resultados-{{ slug }}" hx-push-url="true">« Primera</a>
+      <a class="mini-button" href="{% querystring page=pagina.previous_page_number %}" hx-get="{% querystring page=pagina.previous_page_number %}" hx-target="#resultados-{{ slug }}" hx-push-url="true">‹ Anterior</a>
+    {% endif %}
+    <span class="pagination-current">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}
+      <a class="mini-button" href="{% querystring page=pagina.next_page_number %}" hx-get="{% querystring page=pagina.next_page_number %}" hx-target="#resultados-{{ slug }}" hx-push-url="true">Siguiente ›</a>
+      <a class="mini-button" href="{% querystring page=pagina.paginator.num_pages %}" hx-get="{% querystring page=pagina.paginator.num_pages %}" hx-target="#resultados-{{ slug }}" hx-push-url="true">Última »</a>
+    {% endif %}
+  </div>
+</div>
+{% else %}
+<div class="pagination pagination-sola">
+  <span class="pagination-info">{{ pagina.paginator.count }} registro{{ pagina.paginator.count|pluralize }}</span>
+</div>
+{% endif %}

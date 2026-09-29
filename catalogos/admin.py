@@ -5,16 +5,16 @@ from .models import Conductor, TarifaMaestra, Tracto
 
 @admin.register(Conductor)
 class ConductorAdmin(admin.ModelAdmin):
-    list_display = ("nombre", "rut", "tracto_patente", "estado")
-    list_filter = ("estado",)
+    list_display = ("nombre", "rut", "tracto_patente", "tipo_contrato", "estado")
+    list_filter = ("estado", "tipo_contrato")
     search_fields = ("nombre", "rut")
 
 
 @admin.register(Tracto)
 class TractoAdmin(admin.ModelAdmin):
-    list_display = ("patente", "modelo", "conductor_asignado", "estado")
-    list_filter = ("estado",)
-    search_fields = ("patente", "conductor_asignado")
+    list_display = ("patente", "marca", "modelo", "conductor", "tag", "estado")
+    list_filter = ("estado", "marca")
+    search_fields = ("patente", "conductor__nombre", "tag")
 
 
 @admin.register(TarifaMaestra)

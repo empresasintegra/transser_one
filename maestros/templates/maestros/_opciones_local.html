@@ -1,0 +1,10 @@
+{% comment %}
+stringformat:"d" a propósito: con USE_THOUSAND_SEPARATOR=True, {{ local.pk }}
+solo (sin el filtro) renderiza pks >= 1000 como "1 191" en vez de "1191"
+— rompe el value del <option>. stringformat usa formato %d de Python,
+sin localizar.
+{% endcomment %}
+<option value="">---------</option>
+{% for local in locales %}
+<option value="{{ local.pk|stringformat:"d" }}">{{ local.nombre }}{% if local.codigo %} ({{ local.codigo }}){% endif %}</option>
+{% endfor %}

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Transser One{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/transser.css' %}">
+  <link rel="stylesheet" href="{% static 'css/transser.css' %}?v=maestros4">
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
 <body>
@@ -23,9 +23,9 @@
       <a class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'operaciones:dashboard' %}">Dashboard</a>
       <a class="nav-item {% if request.resolver_match.url_name == 'centro_operaciones' %}active{% endif %}" href="{% url 'operaciones:centro_operaciones' %}">Centro de Operaciones</a>
       <a class="nav-item {% if request.resolver_match.url_name == 'crear_servicio' %}active{% endif %}" href="{% url 'operaciones:crear_servicio' %}">Nuevo Servicio</a>
-      <button class="nav-item disabled" disabled title="En construcción">Clientes</button>
-      <button class="nav-item disabled" disabled title="En construcción">Flota</button>
-      <button class="nav-item disabled" disabled title="En construcción">Conductores</button>
+      <a class="nav-item {% if request.resolver_match.app_name == 'maestros' %}active{% endif %}" href="{% url 'maestros:index' %}">Maestros</a>
+      <a class="nav-item {% if request.resolver_match.kwargs.slug == 'tractos' %}active{% endif %}" href="{% url 'maestros:lista' 'tractos' %}">Flota</a>
+      <a class="nav-item {% if request.resolver_match.kwargs.slug == 'conductores' %}active{% endif %}" href="{% url 'maestros:lista' 'conductores' %}">Conductores</a>
       <button class="nav-item disabled" disabled title="En construcción">Finanzas</button>
       <button class="nav-item disabled" disabled title="En construcción">Reportes</button>
     </nav>
@@ -63,5 +63,6 @@ document.body.addEventListener('htmx:configRequest', (event) => {
   event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
 });
 </script>
+<script src="{% static 'js/rut-validator.js' %}?v=3"></script>
 </body>
 </html>

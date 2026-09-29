@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Maestros · Transser One{% endblock %}
+{% block page_title %}Maestros{% endblock %}
+{% block content %}
+
+<div class="maestros-hero">
+  <div>
+    <p class="eyebrow" style="color:#ff9c5c">Datos base del sistema</p>
+    <h1 style="color:#fff">Maestros</h1>
+    <p>Clientes, tarifas, flota, ubicaciones y catálogos que alimentan el resto de Transser One. Mantenlos al día para que Operaciones y Facturación trabajen con datos correctos.</p>
+  </div>
+  <div class="hero-stats">
+    <div><strong>{{ total_tablas }}</strong><span>Mantenedores</span></div>
+    <div><strong>{{ total_registros }}</strong><span>Registros totales</span></div>
+  </div>
+</div>
+
+{% for grupo, info in grupos.items %}
+<section class="group-block">
+  <div class="group-block-header">
+    <div class="group-icon">{{ info.icono }}</div>
+    <div>
+      <h2>{{ grupo }}</h2>
+      <span>{{ info.descripcion }}</span>
+    </div>
+  </div>
+
+  <div class="entity-grid">
+    {% for item in info.items %}
+    <a class="entity-card" href="{% url 'maestros:lista' item.slug %}">
+      <div class="entity-card-top">
+        <div class="entity-card-icon">{{ item.icono }}</div>
+        <div class="entity-card-count">{{ item.cantidad }}</div>
+      </div>
+      <strong class="entity-title">{{ item.titulo }}</strong>
+      <p>{{ item.descripcion }}</p>
+      <span class="entity-card-arrow">Ver mantenedor →</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+{% endblock %}

@@ -1,27 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 
-from .models import Conductor, TarifaMaestra
-
-
-@login_required
-def opciones_tarifas(request):
-    """Fragmento htmx: opciones del <select> de tarifas para un proveedor dado."""
-    proveedor = request.GET.get("proveedor_select", "") or request.GET.get("proveedor", "")
-    tarifas = TarifaMaestra.objects.filter(estado="Activa")
-    if proveedor:
-        tarifas = tarifas.filter(proveedor=proveedor)
-    else:
-        tarifas = tarifas.none()
-    return render(request, "catalogos/_opciones_tarifa.html", {"tarifas": tarifas})
-
-
-@login_required
-def previsualizar_tarifa(request):
-    """Fragmento htmx: resumen de la tarifa seleccionada (mandante, ruta, neto/IVA/total)."""
-    tarifa_id = request.GET.get("tarifa_id")
-    tarifa = TarifaMaestra.objects.filter(pk=tarifa_id).first() if tarifa_id else None
-    return render(request, "catalogos/_previsualizacion_tarifa.html", {"tarifa": tarifa})
+from .models import Conductor
 
 
 @login_required

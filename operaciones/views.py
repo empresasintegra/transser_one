@@ -9,14 +9,38 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from accounts.decorators import rol_requerido
-from catalogos.models import Conductor, TarifaMaestra
+from catalogos.models import Conductor
 from gastos.models import CategoriaGasto, GastoRuta
+from maestros.models import Cliente, Local, Ruta, Tarifa
 
 from .models import ComisionServicio, EventoServicio, Servicio
 
 ROL_CREADOR_SERVICIO = "Operaciones"
 ROLES_AUTORIZADORES_CAMBIO = ("Administrador", "Gerencia")
 ROL_MODIFICADOR_TARIFA = "Administrador"
+
+# Los 4 campos de maestros.Tarifa que pueden traer un valor cargado, en el
+# orden en que se ofrecen en el <select> de "Nuevo Servicio".
+TIPOS_TARIFA = [
+    ("seco", "Seco"),
+    ("frio", "Frío"),
+    ("congelado", "Congelado"),
+    ("unica", "Única"),
+]
+ETIQUETAS_TIPO_TARIFA = dict(TIPOS_TARIFA)
+
+
+def _resolver_tarifa(cliente_id, ruta_id, local_id=None):
+    """Encuentra la Tarifa activa para (cliente, ruta), prefiriendo una
+    específica del local elegido por sobre una genérica del cliente."""
+    if not cliente_id or not ruta_id:
+        return None
+    base = Tarifa.objects.filter(cliente_id=cliente_id, ruta_id=ruta_id, activa=True)
+    if local_id:
+        con_local = base.filter(local_id=local_id).first()
+        if con_local:
+            return con_local
+    return base.filter(local__isnull=True).first() or base.first()
 
 
 @login_required
@@ -105,57 +129,93 @@ def servicio_detalle(request, servicio_id):
     return render(request, "operaciones/detalle.html", contexto)
 
 
+@login_required
+def opciones_rutas_cliente(request):
+    """Fragmento htmx: rutas con al menos una Tarifa activa para el cliente elegido."""
+    cliente_id = request.GET.get("cliente")
+    rutas = Ruta.objects.none()
+    if cliente_id:
+        rutas = (
+            Ruta.objects.filter(tarifas__cliente_id=cliente_id, tarifas__activa=True)
+            .distinct()
+            .select_related("comuna_origen", "comuna_destino")
+            .order_by("comuna_origen__nombre", "comuna_destino__nombre")
+        )
+    return render(request, "operaciones/_opciones_ruta.html", {"rutas": rutas})
+
+
+@login_required
+def opciones_locales_cliente_servicio(request):
+    """Fragmento htmx: locales del cliente elegido (campo opcional, a diferencia
+    del mismo fragmento en el mantenedor de Tarifas)."""
+    cliente_id = request.GET.get("cliente")
+    locales = Local.objects.filter(cliente_id=cliente_id).order_by("nombre") if cliente_id else Local.objects.none()
+    return render(request, "operaciones/_opciones_local.html", {"locales": locales})
+
+
+@login_required
+def previsualizar_tarifa_servicio(request):
+    """Fragmento htmx: dado cliente + ruta (+ local opcional), resuelve la
+    Tarifa activa y ofrece un <select> con los tipos de carga que tienen
+    valor cargado (seco/frío/congelado/única) para elegir cuál corresponde."""
+    tarifa_obj = _resolver_tarifa(
+        request.GET.get("cliente"), request.GET.get("ruta"), request.GET.get("local")
+    )
+    opciones = []
+    if tarifa_obj:
+        for campo, etiqueta in TIPOS_TARIFA:
+            valor = getattr(tarifa_obj, campo)
+            if valor is not None:
+                opciones.append((campo, etiqueta, valor))
+    contexto = {
+        "ruta_elegida": bool(request.GET.get("ruta")),
+        "tarifa": tarifa_obj,
+        "opciones": opciones,
+    }
+    return render(request, "operaciones/_tarifa_preview.html", contexto)
+
+
 @rol_requerido(ROL_CREADOR_SERVICIO)
 def crear_servicio(request):
     if request.method == "POST":
-        tarifa_id = request.POST.get("tarifa_id") or None
-        tarifa_obj = None
-
-        cliente = request.POST.get("proveedor_select", "").strip()
-        origen = ""
-        destino = ""
-        mandante = None
-        codigo_local = None
-        tipo_servicio = None
-        tarifa = Decimal("0")
-        tasa_iva = Decimal("19")
-
+        cliente_id = request.POST.get("cliente") or None
+        local_id = request.POST.get("local") or None
+        ruta_id = request.POST.get("ruta") or None
+        tipo_tarifa = request.POST.get("tipo_tarifa") or ""
         fecha_carga = parse_date(request.POST.get("fecha_carga") or "")
 
-        if not cliente or not fecha_carga:
-            messages.error(request, "Completa el cliente y la fecha de carga.")
+        if not cliente_id or not ruta_id or not fecha_carga:
+            messages.error(request, "Completa el cliente, la ruta y la fecha de carga.")
             return redirect("operaciones:crear_servicio")
 
-        if tarifa_id:
-            tarifa_obj = get_object_or_404(TarifaMaestra, pk=tarifa_id, estado="Activa")
-            cliente = tarifa_obj.proveedor
-            mandante = tarifa_obj.mandante
-            codigo_local = tarifa_obj.codigo_local
-            tipo_servicio = tarifa_obj.tipo_servicio
-            origen = tarifa_obj.origen
-            destino = tarifa_obj.destino
-            tarifa = tarifa_obj.tarifa_neta
-            tasa_iva = tarifa_obj.tasa_iva
-        else:
-            messages.error(request, "Selecciona una ruta/tarifa para el servicio.")
+        if tipo_tarifa not in ETIQUETAS_TIPO_TARIFA:
+            messages.error(request, "Selecciona el tipo de tarifa (seco, frío, congelado o única).")
+            return redirect("operaciones:crear_servicio")
+
+        cliente_obj = get_object_or_404(Cliente, pk=cliente_id)
+        local_obj = get_object_or_404(Local, pk=local_id, cliente=cliente_obj) if local_id else None
+        tarifa_obj = _resolver_tarifa(cliente_id, ruta_id, local_id)
+        valor_tarifa = getattr(tarifa_obj, tipo_tarifa, None) if tarifa_obj else None
+
+        if valor_tarifa is None:
+            messages.error(request, "No hay una tarifa activa con ese tipo de carga para el cliente y la ruta elegidos.")
             return redirect("operaciones:crear_servicio")
 
         servicio = Servicio(
-            cliente=cliente,
-            mandante=mandante,
-            codigo_local=codigo_local,
-            tipo_servicio=tipo_servicio,
-            tarifa_maestra=tarifa_obj,
-            origen=origen,
-            destino=destino,
+            cliente=cliente_obj.razon_social,
+            codigo_local=local_obj.codigo if local_obj else None,
+            tipo_servicio=None,
+            tarifa_ref=tarifa_obj,
+            origen=str(tarifa_obj.ruta.comuna_origen),
+            destino=str(tarifa_obj.ruta.comuna_destino),
             fecha_carga=fecha_carga,
             fecha_entrega_estimada=parse_date(request.POST.get("fecha_entrega_estimada") or ""),
-            tipo_carga=request.POST.get("tipo_carga") or None,
+            tipo_carga=ETIQUETAS_TIPO_TARIFA[tipo_tarifa],
             conductor_principal=request.POST.get("conductor_principal") or None,
             tracto=request.POST.get("tracto") or None,
             rampla=request.POST.get("rampla") or None,
-            tarifa=tarifa,
-            tasa_iva=tasa_iva,
+            tarifa=valor_tarifa,
+            tasa_iva=Decimal("19"),
             observaciones=request.POST.get("observaciones") or None,
             creado_por=request.user.nombre,
         )
@@ -183,7 +243,7 @@ def crear_servicio(request):
         return redirect("operaciones:servicio_detalle", servicio_id=servicio.id)
 
     contexto = {
-        "proveedores": TarifaMaestra.objects.filter(estado="Activa").values_list("proveedor", flat=True).distinct().order_by("proveedor"),
+        "clientes": Cliente.objects.filter(activo=True).order_by("razon_social"),
         "conductores": Conductor.objects.filter(estado=Conductor.Estado.ACTIVO),
     }
     return render(request, "operaciones/servicio_form.html", contexto)

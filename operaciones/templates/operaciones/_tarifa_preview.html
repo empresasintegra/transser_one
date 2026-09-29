@@ -1,0 +1,33 @@
+{% load l10n %}
+<div
+  id="tarifa-preview" class="tax-box" style="margin: 15px 0"
+  hx-get="{% url 'operaciones:previsualizar_tarifa_servicio' %}"
+  hx-trigger="change from:[name='ruta'], change from:[name='cliente'], change from:[name='local']"
+  hx-include="[name='cliente'],[name='local'],[name='ruta']"
+  hx-swap="outerHTML"
+>
+{% if opciones %}
+  <input type="hidden" name="tarifa_id" value="{{ tarifa.pk|stringformat:"d" }}">
+  <label class="field full-width" style="grid-column: 1/-1">Tipo de tarifa *
+    <select name="tipo_tarifa" id="tipo_tarifa_select" required>
+      <option value="">Selecciona el tipo de carga...</option>
+      {% for campo, etiqueta, valor in opciones %}
+      <option value="{{ campo }}" data-valor="{{ valor|unlocalize }}">{{ etiqueta }} — ${{ valor }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <div><span>Neto</span><strong id="tarifa-neto">$0</strong></div>
+  <div><span>IVA (19%)</span><strong id="tarifa-iva">$0</strong></div>
+  <div><span>Total</span><strong id="tarifa-total">$0</strong></div>
+{% elif tarifa %}
+  <p class="muted" style="grid-column: 1/-1; margin:0">
+    Esa tarifa no tiene ningún valor cargado (seco/frío/congelado/única) — revísala en Maestros → Tarifas.
+  </p>
+{% elif ruta_elegida %}
+  <p class="muted" style="grid-column: 1/-1; margin:0">
+    No hay una tarifa activa para ese cliente y esa ruta.
+  </p>
+{% else %}
+  <p class="muted" style="grid-column: 1/-1; margin:0">Selecciona cliente y ruta para ver las tarifas disponibles.</p>
+{% endif %}
+</div>

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load maestros_extras %}
+{% block title %}{{ cfg.titulo }} · Transser One{% endblock %}
+{% block page_title %}{{ cfg.titulo }}{% endblock %}
+{% block content %}
+
+<div class="crumbs">
+  <a href="{% url 'maestros:index' %}">Maestros</a>
+  <span class="sep">/</span>
+  <span class="current">{{ cfg.titulo }}</span>
+</div>
+
+<div class="mantenedor-heading">
+  <div class="group-icon">{{ cfg.icono }}</div>
+  <div>
+    <h1 style="margin-bottom:0">{{ cfg.titulo }}</h1>
+    <p>{{ cfg.descripcion }}</p>
+  </div>
+</div>
+
+<section class="panel" id="mantenedor-{{ slug }}">
+  <div class="mantenedor-toolbar">
+    {% if cfg.busqueda %}
+    <div class="search-bar">
+      <input
+        type="text" name="q" value="{{ busqueda }}" placeholder="Buscar {{ cfg.titulo|lower }}..."
+        class="mantenedor-filtro"
+        hx-get="{% url 'maestros:lista' slug %}"
+        hx-trigger="keyup changed delay:400ms, search"
+        hx-target="#resultados-{{ slug }}" hx-include=".mantenedor-filtro" hx-push-url="true"
+      >
+    </div>
+    {% endif %}
+
+    <select
+      name="por_pagina"
+      class="mantenedor-filtro"
+      hx-get="{% url 'maestros:lista' slug %}"
+      hx-trigger="change"
+      hx-target="#resultados-{{ slug }}" hx-include=".mantenedor-filtro" hx-push-url="true"
+    >
+      {% for n in opciones_por_pagina %}
+      <option value="{{ n }}" {% if n == por_pagina %}selected{% endif %}>{{ n }} por página</option>
+      {% endfor %}
+    </select>
+
+    <a href="{% url 'maestros:crear' slug %}" class="button primary mantenedor-toolbar-nuevo">+ {{ cfg.nuevo_texto }}</a>
+  </div>
+
+  <div id="resultados-{{ slug }}">
+    {% include "maestros/_tabla.html" %}
+  </div>
+</section>
+{% endblock %}

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Nuevo servicio · Transser One{% endblock %}
 {% block page_title %}Registro de servicio{% endblock %}
 {% block content %}
@@ -7,20 +8,26 @@
     <form method="post">
       {% csrf_token %}
       <div class="form-grid">
-        <label class="field">Proveedor / Cliente *
-          <select name="proveedor_select" required
-                  hx-get="{% url 'catalogos:opciones_tarifas' %}"
-                  hx-target="#tarifa_id" hx-trigger="change" hx-include="this">
+        <label class="field">Cliente *
+          <select name="cliente" required
+                  hx-get="{% url 'operaciones:opciones_rutas_cliente' %}"
+                  hx-target="#ruta_select" hx-trigger="change" hx-include="this">
             <option value="">Seleccionar...</option>
-            {% for p in proveedores %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+            {% for c in clientes %}<option value="{{ c.pk|stringformat:"d" }}">{{ c.razon_social }}</option>{% endfor %}
           </select>
         </label>
 
-        <label class="field">Ruta y tipo de servicio *
-          <select name="tarifa_id" id="tarifa_id" required
-                  hx-get="{% url 'catalogos:previsualizar_tarifa' %}"
-                  hx-target="#tarifa-preview" hx-swap="outerHTML" hx-trigger="change">
-            <option value="">Selecciona primero un proveedor</option>
+        <label class="field">Local (opcional)
+          <select name="local" id="local_select"
+                  hx-get="{% url 'operaciones:opciones_locales_cliente_servicio' %}"
+                  hx-target="this" hx-trigger="change from:[name='cliente']" hx-include="[name='cliente']">
+            <option value="">Selecciona primero un cliente</option>
+          </select>
+        </label>
+
+        <label class="field">Ruta *
+          <select name="ruta" id="ruta_select" required>
+            <option value="">Selecciona primero un cliente</option>
           </select>
         </label>
 
@@ -34,16 +41,13 @@
         </label>
       </div>
 
-      <div class="tax-box" id="tarifa-preview" style="margin: 15px 0">
-        <p class="muted" style="grid-column: 1/-1; margin:0">Selecciona una tarifa para ver el detalle.</p>
-      </div>
+      {% include "operaciones/_tarifa_preview.html" %}
 
       <div class="form-grid">
         <label class="field">Fecha de carga *<input type="date" name="fecha_carga" required></label>
         <label class="field">Entrega estimada<input type="date" name="fecha_entrega_estimada"></label>
         <label class="field">Tracto<input type="text" id="tracto-preview" name="tracto" readonly placeholder="Automático según conductor"></label>
         <label class="field">Rampla<input type="text" name="rampla" placeholder="Ejemplo: HGKB23"></label>
-        <label class="field">Tipo de carga<input type="text" name="tipo_carga" placeholder="Seca, refrigerada..."></label>
       </div>
 
       <label class="field full-width">Observaciones<textarea name="observaciones" rows="3"></textarea></label>
@@ -55,4 +59,5 @@
     </form>
   </div>
 </section>
+<script src="{% static 'js/nuevo-servicio.js' %}?v=1"></script>
 {% endblock %}

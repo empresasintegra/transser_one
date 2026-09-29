@@ -1,0 +1,8 @@
+{% if rutas %}
+<option value="">Selecciona una ruta...</option>
+{% for ruta in rutas %}
+<option value="{{ ruta.pk|stringformat:"d" }}">{{ ruta }}</option>
+{% endfor %}
+{% else %}
+<option value="">Este cliente no tiene tarifas activas</option>
+{% endif %}

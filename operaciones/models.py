@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from django.db import models
 
-from catalogos.models import TarifaMaestra
+from maestros.models import Tarifa
 
 
 class Servicio(models.Model):
@@ -26,7 +26,11 @@ class Servicio(models.Model):
     mandante = models.CharField(max_length=150, blank=True, null=True)
     codigo_local = models.CharField(max_length=30, blank=True, null=True)
     tipo_servicio = models.CharField(max_length=30, blank=True, null=True)
-    tarifa_maestra = models.ForeignKey(TarifaMaestra, null=True, blank=True, on_delete=models.SET_NULL)
+    # FK a maestros.Tarifa (no a catalogos.TarifaMaestra, que quedó sin uso
+    # una vez que Nuevo Servicio pasó a tomar los datos de maestros): deja
+    # trazabilidad de qué fila de tarifa se usó, aunque el valor real
+    # cobrado queda fijo en el campo `tarifa` de abajo (foto del momento).
+    tarifa_ref = models.ForeignKey(Tarifa, null=True, blank=True, on_delete=models.SET_NULL, related_name="servicios")
     origen = models.CharField(max_length=150)
     destino = models.CharField(max_length=150)
     fecha_carga = models.DateField()

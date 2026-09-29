@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Django
+staticfiles/
+media/
+
+# Entorno / secretos
+.env
+.env.*
+!.env.example
+
+# Datos de importación (archivos de origen del cliente, no van al repo)
+var/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

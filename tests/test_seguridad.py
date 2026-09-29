@@ -8,12 +8,6 @@ from operaciones.models import Servicio
 
 PASSWORD = "Password123!"
 
-DATOS_SERVICIO = {
-    "proveedor_select": "Cliente Demo",
-    "tarifa_id": "",  # se completa en cada test con una tarifa real
-    "fecha_carga": "2026-08-05",
-}
-
 
 @pytest.fixture
 def usuarios(db):
@@ -35,18 +29,14 @@ def usuarios(db):
 
 @pytest.fixture
 def tarifa(db):
-    from catalogos.models import TarifaMaestra
+    from maestros.models import Cliente, Comuna, Region, Ruta, Tarifa
 
-    return TarifaMaestra.objects.create(
-        proveedor="Cliente Demo",
-        origen="Santiago",
-        destino="Valparaíso",
-        ruta="Santiago - Valparaíso",
-        tipo_servicio="Directo",
-        tarifa_neta=100000,
-        tasa_iva=19,
-        estado="Activa",
-    )
+    region = Region.objects.create(nombre="Región Metropolitana de Santiago")
+    origen = Comuna.objects.create(nombre="Santiago", region=region)
+    destino = Comuna.objects.create(nombre="Valparaíso", region=region)
+    ruta = Ruta.objects.create(comuna_origen=origen, comuna_destino=destino)
+    cliente = Cliente.objects.create(razon_social="Cliente Demo", rut="76.111.222-3")
+    return Tarifa.objects.create(cliente=cliente, ruta=ruta, seco=100000, activa=True)
 
 
 @pytest.fixture
@@ -60,8 +50,9 @@ def login(client, email, password=PASSWORD):
 
 def crear_servicio(client, tarifa):
     return client.post(reverse("operaciones:crear_servicio"), {
-        "proveedor_select": "Cliente Demo",
-        "tarifa_id": tarifa.id,
+        "cliente": tarifa.cliente_id,
+        "ruta": tarifa.ruta_id,
+        "tipo_tarifa": "seco",
         "fecha_carga": "2026-08-05",
     })
 
@@ -121,8 +112,9 @@ def test_crear_servicio_con_rol_operaciones_funciona(client, usuarios, tarifa):
 def test_crear_servicio_usa_identidad_real_no_falsificable(client, usuarios, tarifa):
     login(client, "alan@test.cl")
     client.post(reverse("operaciones:crear_servicio"), {
-        "proveedor_select": "Cliente Demo",
-        "tarifa_id": tarifa.id,
+        "cliente": tarifa.cliente_id,
+        "ruta": tarifa.ruta_id,
+        "tipo_tarifa": "seco",
         "fecha_carga": "2026-08-05",
         "creado_por": "Un Impostor Cualquiera",
     })

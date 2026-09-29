@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load maestros_extras %}
+{% block title %}{{ cfg.titulo_singular }} · Transser One{% endblock %}
+{% block page_title %}{% if modo == "crear" %}{{ cfg.nuevo_texto }}{% else %}Editar {{ cfg.titulo_singular|lower }}{% endif %}{% endblock %}
+{% block content %}
+
+<div class="crumbs">
+  <a href="{% url 'maestros:index' %}">Maestros</a>
+  <span class="sep">/</span>
+  <a href="{% url 'maestros:lista' slug %}">{{ cfg.titulo }}</a>
+  <span class="sep">/</span>
+  <span class="current">{% if modo == "crear" %}Nuevo{% else %}Editar{% endif %}</span>
+</div>
+
+<div class="mantenedor-heading">
+  <div class="group-icon">{{ cfg.icono }}</div>
+  <div>
+    <h1 style="margin-bottom:0">{% if modo == "crear" %}{{ cfg.nuevo_texto }}{% else %}Editar {{ cfg.titulo_singular|lower }}{% endif %}</h1>
+    <p>{{ cfg.descripcion }}</p>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-body">
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% if form.non_field_errors %}
+        <div class="alert error">{{ form.non_field_errors }}</div>
+      {% endif %}
+      <div class="form-grid">
+        {% for field in form %}
+        {% if field.field.widget.input_type == 'checkbox' %}
+        <label class="field toggle-row">
+          {{ field }} {{ field.label }}
+          {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
+        </label>
+        {% else %}
+        <label class="field{% if field|es_textarea %} full-width{% endif %}">
+          {{ field.label }}
+          {{ field }}
+          {% if field.help_text %}<small class="muted">{{ field.help_text }}</small>{% endif %}
+          {% if field.errors %}<span class="warning-text">{{ field.errors|striptags }}</span>{% endif %}
+        </label>
+        {% endif %}
+        {% endfor %}
+      </div>
+      <div class="form-actions" style="margin-top: 18px">
+        <button type="submit" class="button primary">Guardar</button>
+        <a href="{% url 'maestros:lista' slug %}" class="button secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

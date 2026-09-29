@@ -1,0 +1,4 @@
+<option value="">Sin local específico</option>
+{% for local in locales %}
+<option value="{{ local.pk|stringformat:"d" }}">{{ local.nombre }}{% if local.codigo %} ({{ local.codigo }}){% endif %}</option>
+{% endfor %}

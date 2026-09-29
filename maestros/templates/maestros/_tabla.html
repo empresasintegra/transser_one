@@ -1,0 +1,65 @@
+{% load maestros_extras %}
+{% comment %}
+Vive acá adentro (no en list.html) para que quede al día tras cada orden/página:
+así una búsqueda o un cambio de "por página" posteriores (que sí leen este
+campo vía hx-include) no pisan el orden activo con un valor viejo.
+{% endcomment %}
+<input type="hidden" name="orden" value="{{ orden_param }}" class="mantenedor-filtro">
+{% if pagina.object_list %}
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        {% for campo in cfg.columnas %}
+        <th>
+          <a
+            class="th-sort {% if orden_campo == campo %}activo{% endif %}"
+            href="{% querystring orden=campo|toggle_orden:orden_param page="" %}"
+            hx-get="{% querystring orden=campo|toggle_orden:orden_param page="" %}"
+            hx-target="#resultados-{{ slug }}" hx-push-url="true"
+          >
+            {{ campo|verbose_name:cfg.modelo }}
+            {% if orden_campo == campo %}<span class="sort-arrow">{% if orden_desc %}▼{% else %}▲{% endif %}</span>{% endif %}
+          </a>
+        </th>
+        {% endfor %}
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for objeto in pagina %}
+      <tr>
+        {% for campo in cfg.columnas %}<td>{{ objeto|render_cell:campo }}</td>{% endfor %}
+        <td>
+          <div class="row-actions">
+            <a href="{% url 'maestros:editar' slug objeto.pk %}" class="mini-button accent">Editar</a>
+            <form method="post" action="{% url 'maestros:eliminar' slug objeto.pk %}" onsubmit="return confirm('¿Eliminar este registro de {{ cfg.titulo_singular }}?');">
+              {% csrf_token %}
+              <button type="submit" class="mini-button danger">Eliminar</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include "maestros/_paginacion.html" %}
+
+{% else %}
+<div class="empty-state">
+  <div class="empty-icon">{{ cfg.icono }}</div>
+  <strong>{% if busqueda %}Sin resultados{% else %}Todavía no hay {{ cfg.titulo|lower }} registrados{% endif %}.</strong>
+  <p>
+    {% if busqueda %}
+      No encontramos "{{ busqueda }}" en {{ cfg.titulo|lower }}.
+    {% else %}
+      Crea el primero para empezar a usarlo en el resto del sistema.
+    {% endif %}
+  </p>
+  {% if not busqueda %}
+  <p style="margin-top:14px"><a href="{% url 'maestros:crear' slug %}" class="button primary">+ {{ cfg.nuevo_texto }}</a></p>
+  {% endif %}
+</div>
+{% endif %}

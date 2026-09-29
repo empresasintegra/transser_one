@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "axes",
     "accounts",
     "catalogos",
+    "maestros",
     "operaciones",
     "gastos",
 ]
