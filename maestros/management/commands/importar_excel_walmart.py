@@ -287,7 +287,7 @@ class Command(BaseCommand):
                     tag=tag,
                     tarjeta_combustible=petroleo,
                     proveedor_gps=gps,
-                    estado="Disponible" if status == "Entregado" else (status or "Disponible"),
+                    estado=status if status in Tracto.Estado.values else Tracto.Estado.DISPONIBLE,
                 ),
             )
             self._contar("tractos")

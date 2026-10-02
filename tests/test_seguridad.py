@@ -119,8 +119,8 @@ def test_crear_servicio_usa_identidad_real_no_falsificable(client, usuarios, tar
         "creado_por": "Un Impostor Cualquiera",
     })
     servicio = Servicio.objects.latest("id")
-    assert servicio.creado_por == "Alan Ponce"
-    assert servicio.eventos.first().actor == "Alan Ponce"
+    assert servicio.creado_por.nombre == "Alan Ponce"
+    assert servicio.eventos.first().actor.nombre == "Alan Ponce"
 
 
 # --- RBAC: modificar tarifa (solo rol Administrador) ---
@@ -175,4 +175,4 @@ def test_aprobar_gasto_con_rol_gerencia_funciona_y_usa_identidad_real(client, us
     respuesta = client.post(reverse("gastos:cambiar_estado_gasto", args=[gasto.id]), {"estado": "Aprobado"})
     assert respuesta.status_code == 302
     gasto.refresh_from_db()
-    assert gasto.aprobado_por == "Christian Carter"
+    assert gasto.aprobado_por.nombre == "Christian Carter"

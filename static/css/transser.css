@@ -259,7 +259,7 @@ td small { color: #7a8797; margin-top: 4px; }
 .expense-form .full { grid-column: 1 / -1; }
 
 .profitability { background: #f7fbf8; }
-.profit-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.profit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
 .profit-grid div { display: flex; flex-direction: column; padding: 12px; background: white; border: 1px solid #dbe8df; border-radius: 10px; }
 .profit-grid span { font-size: 12px; color: #64748b; }
 .profit-grid strong { font-size: 18px; }

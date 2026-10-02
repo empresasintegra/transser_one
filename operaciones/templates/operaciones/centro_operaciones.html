@@ -44,8 +44,8 @@
         <tr>
           <td><a class="link-button" href="{% url 'operaciones:servicio_detalle' s.id %}">{{ s.numero }}</a></td>
           <td><strong>{{ s.cliente }}</strong><small>{{ s.origen }} → {{ s.destino }}</small></td>
-          <td>{{ s.conductor_principal|default:"Sin asignar" }}</td>
-          <td><strong>{{ s.tracto|default:"—" }}</strong><small>Rampla: {{ s.rampla|default:"—" }}</small></td>
+          <td>{{ s.conductor_principal.nombre|default:"Sin asignar" }}</td>
+          <td><strong>{{ s.tracto.patente|default:"—" }}</strong><small>Rampla: {{ s.rampla.patente|default:"—" }}</small></td>
           <td>{{ s.fecha_carga }}</td>
           <td>${{ s.tarifa }}</td>
           <td><span class="badge estado-{{ s.estado|slugify }}">{{ s.estado }}</span></td>

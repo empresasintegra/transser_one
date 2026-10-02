@@ -6,6 +6,7 @@
 <div class="detail-hero">
   <div><span>Cliente</span><strong>{{ servicio.cliente }}</strong></div>
   <span class="badge estado-{{ servicio.estado|slugify }}">{{ servicio.estado }}</span>
+  <a class="button" href="{% url 'operaciones:guia_despacho_pdf' servicio.id %}" target="_blank">Descargar Guía de Despacho</a>
 </div>
 
 <div class="route-box">
@@ -15,10 +16,10 @@
 </div>
 
 <div class="detail-grid">
-  <div><span>Conductor</span><strong>{{ servicio.conductor_principal|default:"Sin asignar" }}</strong></div>
-  <div><span>Segundo conductor</span><strong>{{ servicio.conductor_secundario|default:"—" }}</strong></div>
-  <div><span>Tracto</span><strong>{{ servicio.tracto|default:"—" }}</strong></div>
-  <div><span>Rampla</span><strong>{{ servicio.rampla|default:"—" }}</strong></div>
+  <div><span>Conductor</span><strong>{{ servicio.conductor_principal.nombre|default:"Sin asignar" }}</strong></div>
+  <div><span>Segundo conductor</span><strong>{{ servicio.conductor_secundario.nombre|default:"—" }}</strong></div>
+  <div><span>Tracto</span><strong>{{ servicio.tracto.patente|default:"—" }}</strong></div>
+  <div><span>Rampla</span><strong>{{ servicio.rampla.patente|default:"—" }}</strong></div>
   <div><span>Fecha de carga</span><strong>{{ servicio.fecha_carga }}</strong></div>
   <div><span>Tarifa neta</span><strong>${{ servicio.tarifa }}</strong></div>
   <div><span>IVA venta</span><strong>${{ servicio.iva }}</strong></div>
@@ -44,8 +45,14 @@
   <div class="panel-body">
     <form method="post" action="{% url 'operaciones:cambiar_rampla' servicio.id %}" class="form-grid">
       {% csrf_token %}
-      <input name="rampla_nueva" placeholder="Patente nueva rampla" required>
-      <input name="conductor_secundario" placeholder="Segundo conductor" required>
+      <select name="rampla_nueva" required>
+        <option value="">Nueva rampla...</option>
+        {% for r in ramplas %}<option value="{{ r.pk|stringformat:"d" }}">{{ r.patente }}</option>{% endfor %}
+      </select>
+      <select name="conductor_secundario" required>
+        <option value="">Segundo conductor...</option>
+        {% for c in conductores %}<option value="{{ c.pk|stringformat:"d" }}">{{ c.nombre }}</option>{% endfor %}
+      </select>
       <input name="motivo" placeholder="Motivo del reemplazo" required>
       <button class="button secondary" type="submit">Aplicar</button>
     </form>
@@ -114,7 +121,12 @@
           <option>Transferencia</option><option>Efectivo</option><option>Tarjeta Crédito</option><option>Tarjeta Débito</option><option>TAG automático</option>
         </select>
       </label>
-      <label class="field">Proveedor<input name="proveedor"></label>
+      <label class="field">Proveedor
+        <select name="proveedor">
+          <option value="">Sin proveedor</option>
+          {% for p in proveedores %}<option value="{{ p.pk|stringformat:"d" }}">{{ p.nombre }}</option>{% endfor %}
+        </select>
+      </label>
       <label class="field">Tipo documento
         <select name="documento_tipo">
           <option value="">Sin documento</option><option>Factura</option><option>Boleta</option><option>Comprobante</option><option>Recibo</option>
@@ -133,10 +145,101 @@
   </details>
 </section>
 
+<section class="drawer-section">
+  <div class="section-title-row">
+    <h3 style="margin:0">Paradas</h3>
+  </div>
+
+  {% if paradas %}
+  <div class="expense-list">
+    {% for p in paradas %}
+    <div class="expense-card">
+      <div>
+        <strong>{{ p.local.nombre }}</strong>
+        {% if p.es_valor_extra %}
+          <small>Valor extra</small>
+        {% else %}
+          <small>{{ p.ruta }} · {{ p.get_tipo_tarifa_display }}</small>
+        {% endif %}
+        {% if p.observacion %}<small>{{ p.observacion }}</small>{% endif %}
+      </div>
+      <div class="expense-values">
+        <strong>${{ p.valor }}</strong>
+        <form method="post" action="{% url 'operaciones:eliminar_parada' p.id %}" onsubmit="return confirm('¿Eliminar esta parada?');">
+          {% csrf_token %}
+          <button class="mini-button danger" type="submit">Eliminar</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">Este servicio todavía no tiene paradas adicionales.</p>
+  {% endif %}
+
+  {% if cliente_servicio %}
+  <details style="margin-top: 14px">
+    <summary>Agregar parada</summary>
+    <form method="post" action="{% url 'operaciones:crear_parada' servicio.id %}" class="expense-form">
+      {% csrf_token %}
+      <input type="hidden" name="cliente" value="{{ cliente_servicio.pk|stringformat:"d" }}">
+
+      <label class="field check-label full">
+        <input type="checkbox" name="es_valor_extra" id="parada_valor_extra_check">
+        Valor extra (cobro puntual en el local, no una tarifa de ruta)
+      </label>
+
+      <label class="field">Local *
+        <select name="local" required>
+          <option value="">Seleccionar...</option>
+          {% for l in locales_cliente %}<option value="{{ l.pk|stringformat:"d" }}">{{ l.nombre }}{% if l.codigo %} ({{ l.codigo }}){% endif %}</option>{% endfor %}
+        </select>
+      </label>
+
+      <div id="parada-extra-fields" hidden class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label class="field">Valor a pagar en ese local *<input type="number" name="valor_extra" min="1" step="1"></label>
+      </div>
+
+      <div id="parada-normal-fields" class="full" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label class="field">Ruta *
+          <select name="ruta">
+            <option value="">Seleccionar...</option>
+            {% for r in rutas_cliente %}<option value="{{ r.pk|stringformat:"d" }}">{{ r }}</option>{% endfor %}
+          </select>
+        </label>
+        {% include "operaciones/_tarifa_preview.html" with mensaje_inicial="Selecciona la ruta para ver las tarifas disponibles." %}
+      </div>
+
+      <label class="field full">Observación<input name="observacion"></label>
+      <div class="form-actions full">
+        <button type="submit" class="button primary">Guardar parada</button>
+      </div>
+    </form>
+  </details>
+  <script>
+  (function () {
+    const check = document.getElementById("parada_valor_extra_check");
+    const extra = document.getElementById("parada-extra-fields");
+    const normal = document.getElementById("parada-normal-fields");
+    if (!check) return;
+    check.addEventListener("change", () => {
+      extra.hidden = !check.checked;
+      normal.hidden = check.checked;
+    });
+  })();
+  </script>
+  {% else %}
+  <p class="muted" style="margin-top:14px">
+    Este servicio no tiene un cliente de catálogo asociado (se creó antes de conectar Maestros), así que no se le pueden agregar paradas.
+  </p>
+  {% endif %}
+</section>
+
 <section class="drawer-section profitability">
   <h3>Rentabilidad del servicio</h3>
   <div class="profit-grid">
-    <div><span>Ingreso neto</span><strong>${{ servicio.tarifa }}</strong></div>
+    <div><span>Ingreso neto (viaje principal)</span><strong>${{ servicio.tarifa }}</strong></div>
+    <div><span>Paradas adicionales</span><strong>${{ total_paradas }}</strong></div>
     <div><span>Gastos netos</span><strong>${{ gastos_netos }}</strong></div>
     <div><span>Utilidad estimada</span><strong>${{ utilidad }}</strong></div>
     <div><span>Margen</span><strong>{{ margen|floatformat:1 }}%</strong></div>
@@ -147,7 +250,7 @@
 <section class="drawer-section">
   <h3>Comisiones</h3>
   {% for c in servicio.comisiones.all %}
-    <div class="commission-row"><span>{{ c.conductor }}</span><strong>{{ c.porcentaje }}%</strong></div>
+    <div class="commission-row"><span>{{ c.conductor.nombre }}</span><strong>{{ c.porcentaje }}%</strong></div>
   {% empty %}<p class="muted">Sin comisiones registradas.</p>{% endfor %}
 </section>
 
@@ -160,7 +263,7 @@
       <div>
         <strong>{% if e.estado_nuevo %}{{ e.estado_anterior|default:"Inicio" }} → {{ e.estado_nuevo }}{% else %}{{ e.tipo|cut:"_"|capfirst }}{% endif %}</strong>
         <p>{{ e.motivo|default:"Sin observación" }}</p>
-        <small>{{ e.actor }} · {{ e.creado_en }}</small>
+        <small>{{ e.actor.nombre }} · {{ e.creado_en }}</small>
         {% if e.evidencia_foto %}<span class="evidence">📷 Evidencia: {{ e.evidencia_foto }}</span>{% endif %}
       </div>
     </div>

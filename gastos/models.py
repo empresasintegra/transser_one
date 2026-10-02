@@ -1,7 +1,9 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.db import models
 
+from maestros.models import CentroCosto, Proveedor
 from operaciones.models import Servicio
 
 
@@ -9,7 +11,7 @@ class CategoriaGasto(models.Model):
     codigo = models.CharField(max_length=30, unique=True)
     grupo = models.CharField(max_length=60)
     nombre = models.CharField(max_length=100, unique=True)
-    centro_costo = models.CharField(max_length=80, default="Operaciones")
+    centro_costo = models.ForeignKey(CentroCosto, on_delete=models.PROTECT, blank=True, null=True, related_name="categorias_gasto")
     activa = models.BooleanField(default=True)
 
     class Meta:
@@ -33,7 +35,7 @@ class GastoRuta(models.Model):
     categoria = models.ForeignKey(CategoriaGasto, on_delete=models.PROTECT)
     fecha = models.DateField()
     descripcion = models.CharField(max_length=250)
-    proveedor = models.CharField(max_length=150, blank=True, null=True)
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.PROTECT, blank=True, null=True, related_name="gastos")
     documento_tipo = models.CharField(max_length=50, blank=True, null=True)
     documento_numero = models.CharField(max_length=80, blank=True, null=True)
     monto_neto = models.DecimalField(max_digits=14, decimal_places=2, default=0)
@@ -48,8 +50,10 @@ class GastoRuta(models.Model):
     evidencia = models.CharField(max_length=500, blank=True, null=True)
     estado = models.CharField(max_length=30, choices=Estado.choices, default=Estado.PENDIENTE)
     observacion = models.TextField(blank=True, null=True)
-    creado_por = models.CharField(max_length=150)
-    aprobado_por = models.CharField(max_length=150, blank=True, null=True)
+    creado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name="gastos_creados")
+    aprobado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.PROTECT, blank=True, null=True, related_name="gastos_aprobados",
+    )
     creado_en = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Transser One{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/transser.css' %}?v=maestros4">
+  <link rel="stylesheet" href="{% static 'css/transser.css' %}?v=maestros5">
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
 <body>
@@ -27,7 +27,7 @@
       <a class="nav-item {% if request.resolver_match.kwargs.slug == 'tractos' %}active{% endif %}" href="{% url 'maestros:lista' 'tractos' %}">Flota</a>
       <a class="nav-item {% if request.resolver_match.kwargs.slug == 'conductores' %}active{% endif %}" href="{% url 'maestros:lista' 'conductores' %}">Conductores</a>
       <button class="nav-item disabled" disabled title="En construcción">Finanzas</button>
-      <button class="nav-item disabled" disabled title="En construcción">Reportes</button>
+      <a class="nav-item {% if request.resolver_match.url_name == 'reportes' %}active{% endif %}" href="{% url 'operaciones:reportes' %}">Reportes</a>
     </nav>
 
     <div class="sidebar-footer">

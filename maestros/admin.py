@@ -28,7 +28,8 @@ class RegionAdmin(admin.ModelAdmin):
 class ComunaAdmin(admin.ModelAdmin):
     list_display = ("nombre", "region")
     list_filter = ("region",)
-    search_fields = ("nombre",)
+    search_fields = ("nombre", "region__nombre")
+    list_select_related = ("region",)
 
 
 @admin.register(Proveedor)
@@ -79,9 +80,13 @@ class LocalInline(admin.TabularInline):
 
 @admin.register(Cliente)
 class ClienteAdmin(admin.ModelAdmin):
-    list_display = ("razon_social", "rut", "contacto_nombre", "contacto_telefono", "ejecutivo_comercial", "activo")
-    list_filter = ("activo",)
-    search_fields = ("razon_social", "rut")
+    list_display = (
+        "razon_social", "rut", "contacto_nombre", "contacto_telefono", "ejecutivo_comercial",
+        "nombre_vendedor", "condicion_pago", "es_directo", "activo",
+    )
+    list_filter = ("activo", "es_directo", "condicion_pago")
+    search_fields = ("razon_social", "rut", "nombre_vendedor", "rut_vendedor", "correo_vendedor")
+    readonly_fields = ("creado_en",)
     inlines = [LocalInline]
 
 
@@ -95,27 +100,37 @@ class HorarioRecepcionAdmin(admin.ModelAdmin):
 @admin.register(Local)
 class LocalAdmin(admin.ModelAdmin):
     list_display = ("nombre", "cliente", "codigo", "horario_recepcion", "comuna", "activo")
-    list_filter = ("activo", "horario_recepcion", "comuna__region")
+    list_filter = ("activo", "cliente", "horario_recepcion", "comuna__region")
     search_fields = ("nombre", "codigo", "cliente__razon_social")
     readonly_fields = ("codigo",)
+    autocomplete_fields = ("cliente", "comuna")
+    list_select_related = ("cliente", "comuna", "horario_recepcion")
 
 
 @admin.register(Rampla)
 class RamplaAdmin(admin.ModelAdmin):
     list_display = ("patente", "tipo_rampla", "es_externa", "proveedor", "activa")
     list_filter = ("tipo_rampla", "es_externa", "activa")
-    search_fields = ("patente",)
+    search_fields = ("patente", "proveedor__nombre")
+    list_select_related = ("tipo_rampla", "proveedor")
 
 
 @admin.register(Ruta)
 class RutaAdmin(admin.ModelAdmin):
     list_display = ("comuna_origen", "comuna_destino", "kilometros", "activa")
-    list_filter = ("activa",)
+    list_filter = ("activa", "comuna_origen__region", "comuna_destino__region")
     search_fields = ("comuna_origen__nombre", "comuna_destino__nombre")
+    autocomplete_fields = ("comuna_origen", "comuna_destino")
+    list_select_related = ("comuna_origen__region", "comuna_destino__region")
 
 
 @admin.register(Tarifa)
 class TarifaAdmin(admin.ModelAdmin):
-    list_display = ("cliente", "local", "ruta", "seco", "frio", "congelado", "unica", "activa")
-    list_filter = ("activa",)
-    search_fields = ("cliente__razon_social",)
+    list_display = (
+        "cliente", "local", "ruta", "seco", "frio", "congelado", "unica",
+        "vigente_desde", "vigente_hasta", "activa",
+    )
+    list_filter = ("activa", "cliente")
+    search_fields = ("cliente__razon_social", "local__nombre", "ruta__comuna_origen__nombre", "ruta__comuna_destino__nombre")
+    autocomplete_fields = ("cliente", "local", "ruta")
+    list_select_related = ("cliente", "local", "ruta__comuna_origen", "ruta__comuna_destino")

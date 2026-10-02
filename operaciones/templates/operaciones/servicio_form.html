@@ -36,7 +36,7 @@
                   hx-get="{% url 'catalogos:tracto_de_conductor' %}"
                   hx-target="#tracto-preview" hx-swap="outerHTML" hx-trigger="change" hx-include="this">
             <option value="">Sin asignar</option>
-            {% for c in conductores %}<option value="{{ c.nombre }}">{{ c.nombre }}</option>{% endfor %}
+            {% for c in conductores %}<option value="{{ c.pk|stringformat:"d" }}">{{ c.nombre }}</option>{% endfor %}
           </select>
         </label>
       </div>
@@ -46,8 +46,13 @@
       <div class="form-grid">
         <label class="field">Fecha de carga *<input type="date" name="fecha_carga" required></label>
         <label class="field">Entrega estimada<input type="date" name="fecha_entrega_estimada"></label>
-        <label class="field">Tracto<input type="text" id="tracto-preview" name="tracto" readonly placeholder="Automático según conductor"></label>
-        <label class="field">Rampla<input type="text" name="rampla" placeholder="Ejemplo: HGKB23"></label>
+        <label class="field">Tracto<input type="text" id="tracto-preview" readonly placeholder="Automático según conductor"></label>
+        <label class="field">Rampla
+          <select name="rampla">
+            <option value="">Sin asignar</option>
+            {% for r in ramplas %}<option value="{{ r.pk|stringformat:"d" }}">{{ r.patente }}</option>{% endfor %}
+          </select>
+        </label>
       </div>
 
       <label class="field full-width">Observaciones<textarea name="observaciones" rows="3"></textarea></label>

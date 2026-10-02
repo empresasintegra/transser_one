@@ -187,15 +187,13 @@ MANTENEDORES = OrderedDict(
                 "nuevo_texto": "Nuevo conductor",
                 "descripcion": "Choferes de la flota y su tracto asignado.",
                 "campos": [
-                    "nombre", "rut", "telefono", "direccion",
+                    "nombre", "rut", "proveedor", "telefono", "direccion",
                     "fecha_ingreso", "tipo_contrato", "estado", "observacion",
                 ],
-                # tracto_patente/modelo_tracto NO son editables acá a propósito:
-                # se completan solos desde el mantenedor de Tractos (campo
-                # `conductor`, ver catalogos/models.py _sincronizar_conductor_tracto).
-                # Se muestran igual en la lista como referencia de solo lectura.
-                "columnas": ["nombre", "rut", "telefono", "tracto_patente", "estado"],
-                "busqueda": ["nombre", "rut"],
+                # El tracto se asigna desde el mantenedor de Tractos (campo
+                # `conductor`); acá se muestra como referencia de solo lectura.
+                "columnas": ["nombre", "rut", "proveedor", "telefono", "tracto", "estado"],
+                "busqueda": ["nombre", "rut", "proveedor__nombre"],
             },
         ),
         (

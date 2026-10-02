@@ -1,8 +1,6 @@
-from decimal import Decimal
-
 from django.db import models
-from django.db.models.signals import post_save
-from django.dispatch import receiver
+
+from maestros.models import Proveedor
 
 
 class Conductor(models.Model):
@@ -19,8 +17,13 @@ class Conductor(models.Model):
     nombre = models.CharField(max_length=150, unique=True)
     rut = models.CharField(max_length=20, unique=True, blank=True, null=True)
     telefono = models.CharField(max_length=30, blank=True, null=True)
-    tracto_patente = models.CharField(max_length=20, blank=True, null=True)
-    modelo_tracto = models.CharField(max_length=100, blank=True, null=True)
+    # Transportista dueño del conductor. null=True solo para no romper los
+    # conductores ya cargados; blank=False obliga a elegirlo en cualquier
+    # formulario (mantenedor y admin) al crear o editar.
+    proveedor = models.ForeignKey(
+        Proveedor, on_delete=models.PROTECT, null=True, related_name="conductores",
+        help_text="Proveedor (transportista) al que pertenece este conductor.",
+    )
     # Agregados tras revisar el Excel real de la empresa (hoja "Transser"):
     direccion = models.CharField("dirección / ciudad", max_length=150, blank=True, null=True)
     fecha_ingreso = models.DateField(blank=True, null=True)
@@ -38,6 +41,12 @@ class Conductor(models.Model):
 
 
 class Tracto(models.Model):
+    class Estado(models.TextChoices):
+        DISPONIBLE = "Disponible", "Disponible"
+        EN_SERVICIO = "En servicio", "En servicio"
+        EN_MANTENCION = "En mantención", "En mantención"
+        FUERA_DE_SERVICIO = "Fuera de servicio", "Fuera de servicio"
+
     patente = models.CharField(max_length=20, unique=True)
     marca = models.CharField(max_length=60, blank=True, null=True)
     modelo = models.CharField(max_length=100, blank=True, null=True)
@@ -53,7 +62,7 @@ class Tracto(models.Model):
     tag = models.CharField("TAG", max_length=60, blank=True, null=True, help_text="Dispositivo de telepeaje.")
     tarjeta_combustible = models.CharField(max_length=60, blank=True, null=True, help_text="Ej: Shell Card, Aramco.")
     proveedor_gps = models.CharField(max_length=60, blank=True, null=True)
-    estado = models.CharField(max_length=30, default="Disponible")
+    estado = models.CharField(max_length=30, choices=Estado.choices, default=Estado.DISPONIBLE)
     observacion = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -61,56 +70,3 @@ class Tracto(models.Model):
 
     def __str__(self):
         return self.patente
-
-
-@receiver(post_save, sender=Tracto)
-def _sincronizar_conductor_tracto(sender, instance, **kwargs):
-    """Mantiene sincronizados los campos legacy `Conductor.tracto_patente` /
-    `modelo_tracto` (texto libre, usados por el formulario de "Nuevo
-    Servicio" en `operaciones`) a partir de la FK real `Tracto.conductor`.
-
-    Así el mantenedor de Tractos queda con una relación de verdad (un
-    <select> a Conductor, no dos campos de texto para escribir a mano) y el
-    flujo viejo que todavía lee el texto sigue funcionando sin tocarlo.
-    """
-    # Libera al conductor anterior si este tracto cambió de dueño.
-    Conductor.objects.filter(tracto_patente=instance.patente).exclude(pk=instance.conductor_id).update(
-        tracto_patente=None, modelo_tracto=None
-    )
-    if instance.conductor_id:
-        Conductor.objects.filter(pk=instance.conductor_id).update(
-            tracto_patente=instance.patente, modelo_tracto=instance.modelo
-        )
-
-
-class TarifaMaestra(models.Model):
-    proveedor = models.CharField(max_length=150)
-    mandante = models.CharField(max_length=150, blank=True, null=True)
-    codigo_local = models.CharField(max_length=30, blank=True, null=True)
-    region = models.CharField(max_length=30, blank=True, null=True)
-    origen = models.CharField(max_length=150)
-    destino = models.CharField(max_length=200)
-    ruta = models.CharField(max_length=350)
-    tipo_servicio = models.CharField(max_length=30)
-    tarifa_neta = models.DecimalField(max_digits=14, decimal_places=2)
-    tasa_iva = models.DecimalField(max_digits=5, decimal_places=2, default=19)
-    vigente_desde = models.DateField(blank=True, null=True)
-    vigente_hasta = models.DateField(blank=True, null=True)
-    estado = models.CharField(max_length=30, default="Activa")
-    observacion = models.TextField(blank=True, null=True)
-
-    class Meta:
-        ordering = ["destino", "tipo_servicio"]
-        verbose_name = "tarifa maestra"
-        verbose_name_plural = "tarifas maestras"
-
-    def __str__(self):
-        return f"{self.proveedor} · {self.ruta}"
-
-    @property
-    def iva(self):
-        return (self.tarifa_neta * self.tasa_iva / Decimal("100")).quantize(Decimal("1"))
-
-    @property
-    def total(self):
-        return self.tarifa_neta + self.iva

@@ -7,6 +7,7 @@ from django.utils.dateparse import parse_date
 from django.views.decorators.http import require_POST
 
 from accounts.decorators import rol_requerido
+from maestros.models import Proveedor
 from operaciones.models import Servicio
 
 from .models import CategoriaGasto, GastoRuta
@@ -37,7 +38,7 @@ def crear_gasto(request, servicio_id):
         categoria=categoria,
         fecha=fecha,
         descripcion=descripcion,
-        proveedor=request.POST.get("proveedor") or None,
+        proveedor=Proveedor.objects.filter(pk=request.POST.get("proveedor") or None, activo=True).first(),
         documento_tipo=request.POST.get("documento_tipo") or None,
         documento_numero=request.POST.get("documento_numero") or None,
         monto_neto=monto_neto,
@@ -49,7 +50,7 @@ def crear_gasto(request, servicio_id):
         reembolsable=request.POST.get("reembolsable") == "on",
         evidencia=request.POST.get("evidencia") or None,
         observacion=request.POST.get("observacion") or None,
-        creado_por=request.user.nombre,
+        creado_por=request.user,
     )
     gasto.calcular_totales()
     gasto.save()
@@ -67,7 +68,7 @@ def cambiar_estado_gasto(request, gasto_id):
         return redirect("operaciones:servicio_detalle", servicio_id=gasto.servicio_id)
 
     gasto.estado = nuevo_estado
-    gasto.aprobado_por = request.user.nombre if nuevo_estado in {GastoRuta.Estado.APROBADO, GastoRuta.Estado.CONTABILIZADO} else None
+    gasto.aprobado_por = request.user if nuevo_estado in {GastoRuta.Estado.APROBADO, GastoRuta.Estado.CONTABILIZADO} else None
     gasto.save(update_fields=["estado", "aprobado_por"])
     messages.success(request, f"Gasto marcado como {nuevo_estado}.")
     return redirect("operaciones:servicio_detalle", servicio_id=gasto.servicio_id)

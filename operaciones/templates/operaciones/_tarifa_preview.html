@@ -28,6 +28,6 @@
     No hay una tarifa activa para ese cliente y esa ruta.
   </p>
 {% else %}
-  <p class="muted" style="grid-column: 1/-1; margin:0">Selecciona cliente y ruta para ver las tarifas disponibles.</p>
+  <p class="muted" style="grid-column: 1/-1; margin:0">{{ mensaje_inicial|default:"Selecciona cliente y ruta para ver las tarifas disponibles." }}</p>
 {% endif %}
 </div>

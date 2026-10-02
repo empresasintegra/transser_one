@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Reportes · Transser One{% endblock %}
+{% block page_title %}Reportes{% endblock %}
+{% block content %}
+
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <h2>Servicios por cliente y mes</h2>
+      <span>Descarga un Excel con todos los servicios de ese período: chofer, ruta, rampla, paradas y más.</span>
+    </div>
+  </div>
+  <div class="panel-body">
+    <form method="get" action="{% url 'operaciones:reportes_excel' %}" class="form-grid">
+      <label class="field">Cliente *
+        <select name="cliente" required>
+          <option value="">Seleccionar...</option>
+          {% for c in clientes %}<option value="{{ c.pk|stringformat:"d" }}">{{ c.razon_social }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="field">Mes *
+        <input type="month" name="mes" required>
+      </label>
+      <div class="field" style="justify-content:flex-end; display:flex; align-items:flex-end">
+        <button type="submit" class="button primary">Descargar Excel</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
